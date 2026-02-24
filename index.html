@@ -170,13 +170,13 @@
 const LEVELS = [
   {
     name: "NOT simples",
-    desc: "A porta NOT inverte o sinal. Faça a saída ser 0!",
+    desc: "A porta NOT inverte o sinal. Acenda a lâmpada!",
     inputs: ["A"],
-    initial: {"A": 0},
+    initial: {"A": 1},
     gates: [{type:"NOT",in:["A"],out:"Y"}],
     output: "Y",
-    target: 0,
-    teach: "NOT inverte: se a entrada é 1, a saída é 0 (e vice-versa)."
+    target: 1,
+    teach: "NOT inverte: se a entrada é 0, a saída é 1 (e vice-versa)."
   },
   {
     name: "OR simples",
