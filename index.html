@@ -40,6 +40,7 @@
   .output-label{font-size:1rem;font-weight:600}
   .output-label.on{color:var(--on)}
   .output-label.off{color:var(--off)}
+  .target-badge{font-size:.85rem;padding:.2rem .5rem;border-radius:8px;background:#1e293b;border:1px solid #334155;color:var(--muted);margin-left:.25rem}
 
   @keyframes pulse-glow{from{filter:drop-shadow(0 0 12px #fbbf24)}to{filter:drop-shadow(0 0 24px #fbbf24)}}
 
@@ -141,6 +142,7 @@
   <div class="output-row">
     <span class="bulb" id="bulb">💡</span>
     <span class="output-label" id="outputLabel">Saída: 0</span>
+    <span class="target-badge" id="targetBadge">🎯 ?</span>
   </div>
 </div>
 
@@ -168,12 +170,13 @@
 const LEVELS = [
   {
     name: "NOT simples",
-    desc: "A porta NOT inverte o sinal. Faça a saída ser 1!",
+    desc: "A porta NOT inverte o sinal. Faça a saída ser 0!",
     inputs: ["A"],
+    initial: {"A": 1},
     gates: [{type:"NOT",in:["A"],out:"Y"}],
     output: "Y",
-    target: 1,
-    teach: "NOT inverte: se a entrada é 0, a saída é 1 (e vice-versa)."
+    target: 0,
+    teach: "NOT inverte: se a entrada é 1, a saída é 0 (e vice-versa)."
   },
   {
     name: "OR simples",
@@ -290,13 +293,14 @@ function loadLevel() {
   const lvl = LEVELS[currentLevel];
   attempts = 0;
   inputs = {};
-  lvl.inputs.forEach(i => inputs[i] = 0);
+  lvl.inputs.forEach(i => inputs[i] = (lvl.initial && lvl.initial[i]) ? 1 : 0);
 
   document.getElementById('levelNum').textContent = currentLevel + 1;
   const targetHint = lvl.target === 0
     ? '<br>🎯 Objetivo: fazer a saída ser <strong style="color:#ef4444">0 (desligada)</strong>!'
     : '<br>🎯 Objetivo: fazer a saída ser <strong style="color:#22c55e">1 (ligada)</strong>!';
   document.getElementById('goalText').innerHTML = `<strong>${lvl.name}</strong><br>${lvl.desc}${targetHint}`;
+  document.getElementById('targetBadge').textContent = lvl.target === 1 ? '🎯 → 1' : '🎯 → 0';
 
   // Trophy row
   const tr = document.getElementById('trophyRow');
@@ -316,8 +320,8 @@ function loadLevel() {
     g.className = 'switch-group';
     g.innerHTML = `<span class="switch-label">${name}</span>`;
     const btn = document.createElement('button');
-    btn.className = 'switch-btn';
-    btn.textContent = '0';
+    btn.className = 'switch-btn' + (inputs[name] ? ' on' : '');
+    btn.textContent = inputs[name] ? '1' : '0';
     btn.onclick = () => toggleInput(name, btn);
     g.appendChild(btn);
     sr.appendChild(g);
@@ -357,6 +361,7 @@ function evaluate() {
 
   bulb.textContent = result ? '💡' : '🔌';
   bulb.classList.toggle('lit', result === 1);
+  const matched = result === lvl.target;
   label.textContent = `Saída: ${result}`;
   label.className = 'output-label ' + (result ? 'on' : 'off');
 
@@ -474,7 +479,7 @@ function drawCircuit() {
     ctx.shadowBlur = 0;
   }
 
-  // Draw input-to-gate wires
+  // Draw all wires: input/gate → gate inputs, and last gate → output
   lvl.gates.forEach((g, gi) => {
     const gp = gatePositions[gi];
     g.in.forEach((inp, ii) => {
@@ -485,8 +490,7 @@ function drawCircuit() {
     });
   });
 
-  // Draw gate-to-output / gate-to-gate (output wire)
-  const lastGate = lvl.gates[lvl.gates.length - 1];
+  // Draw output wire from last gate
   const lastGP = gatePositions[gatePositions.length - 1];
   drawWire(
     {x: lastGP.x + gateW/2, y: lastGP.y},
